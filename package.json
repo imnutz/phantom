@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "description": "Phantom by HTML5 UP\r html5up.net | @n33co\r Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "browserify index.js -o bundle.js"
   },
   "author": "sonngoc",
   "license": "MIT",
   "devDependencies": {
+    "browserify": "^13.0.1",
     "snabbdom": "^0.4.2"
   }
 }

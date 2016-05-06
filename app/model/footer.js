@@ -1,9 +1,9 @@
 "use strict";
 
-var footer = {
+var dataset = {
     gitTitle: "Get in touch",
     followTitle: "Follow",
-    copyright: "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Itaque, ullam!"
+    copyright: "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Itaque, ullam!",
     socialItems: [
         {
             title: "Twitter",
@@ -35,9 +35,19 @@ var footer = {
         },
         {
             title: "Email",
-            classes: ["icon", "style2", "fa-envolope-o"]
+            classes: ["icon", "style2", "fa-envelope-o"]
         }
     ]
+};
+
+var footer = {
+    init: function initFooter() {
+        return dataset;
+    },
+
+    present: function footerPresent(data) {
+        return dataset;
+    }
 };
 
 module.exports = footer;

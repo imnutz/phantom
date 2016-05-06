@@ -9,10 +9,9 @@ var footer = {
             props: {
                 class: classes.join(" ")
             },
-            [
+        }, [
                 input.text(type, name, placeholder)
-            ]
-        });
+        ]);
     },
 
     textAreaFormField: function textAreaFormField(name, placeholder, classes) {
@@ -20,10 +19,9 @@ var footer = {
             props: {
                 class: classes.join(" ")
             },
-            [
-                input.textArea(name, placeholder)
-            ]
-        });
+        }, [
+                input.textarea(name, placeholder)
+        ]);
     },
 
     buttons: function buttons() {
@@ -46,7 +44,7 @@ var footer = {
                 [
                     footer.inputFormField("text", "name", "Name", ["field", "half", "first"]),
                     footer.inputFormField("email", "email", "Email", ["field", "half"]),
-                    footer.textAreaFormField("message", "Message")
+                    footer.textAreaFormField("message", "Message", ["field"])
                 ]
             )
         ]);
@@ -62,9 +60,11 @@ var footer = {
     socialItem: function socialItem(socialItem) {
         return h("li", [
             h("a", {
-                props: {
-                    href: "#",
+                attrs: {
                     class: socialItem.classes.join(" ")
+                },
+                props: {
+                    href: "#"
                 } 
             }, [
                 h("span.label", String(socialItem.title))
@@ -78,7 +78,7 @@ var footer = {
         ]);
     },
 
-    footer: function footer(gitTitle, followTitle, socialItems, copyrightDesc) {
+    footerComponent: function footerComponent(gitTitle, followTitle, socialItems, copyrightDesc) {
         return h("footer#footer", [
             h("div.inner", [
                 footer.getInTouch(gitTitle),

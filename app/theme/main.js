@@ -15,7 +15,7 @@ var main = {
         return h("section.tiles", items.map(tile.tileItem));
     },
 
-    main: function main(headerTitle, headerDescription, mainItems) {
+    mainComponent: function mainComponent(headerTitle, headerDescription, mainItems) {
         return h("div#main", [
             h("div.inner", [
                 main.header(headerTitle, headerDescription),

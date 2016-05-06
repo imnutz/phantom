@@ -22,7 +22,7 @@ var header = {
         ]);
     },
 
-    header: function header(title, logoUrl, navName) {
+    headerComponent: function headerComponent(title, logoUrl, navName) {
         return h("header#header", [
             h("div.inner", [
                 header.logo(title, logoUrl),
