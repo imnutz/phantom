@@ -6,7 +6,7 @@ var input = require("./input");
 var footer = {
     inputFormField: function inputFormField(type, name, placeholder, classes) {
         return h("div", {
-            props: {
+            attrs: {
                 class: classes.join(" ")
             },
         }, [
@@ -16,7 +16,7 @@ var footer = {
 
     textAreaFormField: function textAreaFormField(name, placeholder, classes) {
         return h("div", {
-            props: {
+            attrs: {
                 class: classes.join(" ")
             },
         }, [

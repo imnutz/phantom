@@ -8,6 +8,10 @@ var action = {
 
     wire: function wire(present) {
         this.present = present;
+    },
+
+    loadTiles: function loadTiles() {
+        this.present({ fetchTiles: true });
     }
 };
 
@@ -19,9 +23,9 @@ module.exports = {
     start: function start(state, action, model, view, theme) {
         state.wire(view, action, theme);
 
-        model.wire(state.render);
+        model.wire(state.render.bind(state));
 
-        action.wire(model.present);
+        action.wire(model.present.bind(model));
 
         var viewContainer = document.querySelector("#phantom-app");
         view.setViewContainer(viewContainer);
@@ -107,6 +111,7 @@ module.exports = header;
 "use strict";
 
 var dataset = {
+    onLoad: true,
     headerTitle: "Lorem ipsum dolor.",
     headerDescription: "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Perspiciatis, quasi atque itaque distinctio tempore hic nulla. Similique corporis, explicabo nulla!",
     items: []
@@ -115,6 +120,17 @@ var dataset = {
 var main = {
     init: function initMain() {
         return dataset
+    },
+
+    present: function presentMain(data) {
+        data = data || {};
+
+        if(data.tiles) {
+            dataset.items = data.tiles;
+            dataset.onLoad = false;
+        }
+
+        return dataset;
     }
 };
 
@@ -170,6 +186,8 @@ var menu = require("./menu");
 var main = require("./main");
 var footer = require("./footer");
 
+var reqwest = require("reqwest");
+
 var dataset = {
     header: null,
     menu: null,
@@ -178,6 +196,10 @@ var dataset = {
 };
 
 var noop = function() {};
+
+var fetchTiles = function fetchTiles() {
+    return reqwest("http://localhost:3000/tiles");
+};
 
 var model = {
     render: noop,
@@ -196,12 +218,24 @@ var model = {
     },
 
     present: function modelPresent(data) {
-        this.render(dataset);
+        data = data || {};
+
+        if(data.fetchTiles) {
+            fetchTiles().then(function(response) {
+
+                dataset.main = main.present({
+                    tiles: response
+                });
+
+                this.render(dataset);
+
+            }.bind(this));
+        }
     }
 };
 
 module.exports = model;
-},{"./footer":3,"./header":4,"./main":5,"./menu":6}],8:[function(require,module,exports){
+},{"./footer":3,"./header":4,"./main":5,"./menu":6,"reqwest":19}],8:[function(require,module,exports){
 "use strict";
 
 var state = {
@@ -221,18 +255,22 @@ var state = {
     },
 
     represent: function represent(model) {
-        var representation = this.theme.app(
-            this.theme.header(model.header.title, model.header.logo, model.header.navName),
-            this.theme.menu(model.menu.name, model.menu.items),
-            this.theme.main(model.main.headerTitle, model.main.headerDescription, model.main.items),
-            this.theme.footer(model.footer.gitTitle, model.footer.followTitle, model.footer.socialItems, model.footer.copyright)
-        );
+        if(!model.main.onLoad) {
+            var representation = this.theme.app(
+                this.theme.header(model.header.title, model.header.logo, model.header.navName),
+                this.theme.menu(model.menu.name, model.menu.items),
+                this.theme.main(model.main.headerTitle, model.main.headerDescription, model.main.items),
+                this.theme.footer(model.footer.gitTitle, model.footer.followTitle, model.footer.socialItems, model.footer.copyright)
+            );
 
-        this.view.display(representation);
+            this.view.display(representation);
+        }
     },
 
     nextAction: function nextAction(model) {
-
+        if(model.main.onLoad) {
+            this.action.loadTiles();
+        }
     }
 };
 
@@ -261,7 +299,7 @@ var view = {
 };
 
 module.exports = view;
-},{"snabbdom":26,"snabbdom/modules/attributes":21,"snabbdom/modules/class":22,"snabbdom/modules/eventlisteners":23,"snabbdom/modules/props":24,"snabbdom/modules/style":25}],10:[function(require,module,exports){
+},{"snabbdom":28,"snabbdom/modules/attributes":23,"snabbdom/modules/class":24,"snabbdom/modules/eventlisteners":25,"snabbdom/modules/props":26,"snabbdom/modules/style":27}],10:[function(require,module,exports){
 "use strict";
 
 var h = require("snabbdom/h");
@@ -270,7 +308,7 @@ var input = require("./input");
 var footer = {
     inputFormField: function inputFormField(type, name, placeholder, classes) {
         return h("div", {
-            props: {
+            attrs: {
                 class: classes.join(" ")
             },
         }, [
@@ -280,7 +318,7 @@ var footer = {
 
     textAreaFormField: function textAreaFormField(name, placeholder, classes) {
         return h("div", {
-            props: {
+            attrs: {
                 class: classes.join(" ")
             },
         }, [
@@ -354,7 +392,7 @@ var footer = {
 };
 
 module.exports = footer;
-},{"./input":12,"snabbdom/h":18}],11:[function(require,module,exports){
+},{"./input":12,"snabbdom/h":20}],11:[function(require,module,exports){
 "use strict";
 
 var h = require("snabbdom/h");
@@ -390,7 +428,7 @@ var header = {
 };
 
 module.exports = header;
-},{"snabbdom/h":18}],12:[function(require,module,exports){
+},{"snabbdom/h":20}],12:[function(require,module,exports){
 "use strict";
 
 var h = require("snabbdom/h");
@@ -437,7 +475,7 @@ var  input = {
 };
 
 module.exports =  input;
-},{"snabbdom/h":18}],13:[function(require,module,exports){
+},{"snabbdom/h":20}],13:[function(require,module,exports){
 "use strict";
 
 var h = require("snabbdom/h");
@@ -466,7 +504,7 @@ var main = {
 };
 
 module.exports = main;
-},{"./tile":16,"snabbdom/h":18}],14:[function(require,module,exports){
+},{"./tile":16,"snabbdom/h":20}],14:[function(require,module,exports){
 "use strict";
 
 var h = require("snabbdom/h");
@@ -495,7 +533,7 @@ var menu = {
 };
 
 module.exports = menu;
-},{"snabbdom/h":18}],15:[function(require,module,exports){
+},{"snabbdom/h":20}],15:[function(require,module,exports){
 "use strict";
 
 var h = require("snabbdom/h");
@@ -525,14 +563,14 @@ var theme = {
 };
 
 module.exports = theme;
-},{"./footer":10,"./header":11,"./main":13,"./menu":14,"snabbdom/h":18}],16:[function(require,module,exports){
+},{"./footer":10,"./header":11,"./main":13,"./menu":14,"snabbdom/h":20}],16:[function(require,module,exports){
 "use strict";
 
 var h = require("snabbdom/h");
 
 module.exports = {
     tileItem: function tileItem(tile) {
-        return h("article", {props:{class:tile.cssClass}}, [
+        return h("article", {attrs:{class:tile.cssClass}}, [
             h("span.image", [
                 h("img", {props:{src:tile.imageUrl, alt:""}})
             ]),
@@ -545,7 +583,7 @@ module.exports = {
         ]);
     }
 };
-},{"snabbdom/h":18}],17:[function(require,module,exports){
+},{"snabbdom/h":20}],17:[function(require,module,exports){
 "use strict";
 
 var state = require("./app/state/state");
@@ -558,6 +596,640 @@ var main = require("./app/main");
 
 main.start(state, action, model, view, theme);
 },{"./app/action/action":1,"./app/main":2,"./app/model/model":7,"./app/state/state":8,"./app/state/view":9,"./app/theme/theme":15}],18:[function(require,module,exports){
+
+},{}],19:[function(require,module,exports){
+/*!
+  * Reqwest! A general purpose XHR connection manager
+  * license MIT (c) Dustin Diaz 2015
+  * https://github.com/ded/reqwest
+  */
+
+!function (name, context, definition) {
+  if (typeof module != 'undefined' && module.exports) module.exports = definition()
+  else if (typeof define == 'function' && define.amd) define(definition)
+  else context[name] = definition()
+}('reqwest', this, function () {
+
+  var context = this
+
+  if ('window' in context) {
+    var doc = document
+      , byTag = 'getElementsByTagName'
+      , head = doc[byTag]('head')[0]
+  } else {
+    var XHR2
+    try {
+      XHR2 = require('xhr2')
+    } catch (ex) {
+      throw new Error('Peer dependency `xhr2` required! Please npm install xhr2')
+    }
+  }
+
+
+  var httpsRe = /^http/
+    , protocolRe = /(^\w+):\/\//
+    , twoHundo = /^(20\d|1223)$/ //http://stackoverflow.com/questions/10046972/msie-returns-status-code-of-1223-for-ajax-request
+    , readyState = 'readyState'
+    , contentType = 'Content-Type'
+    , requestedWith = 'X-Requested-With'
+    , uniqid = 0
+    , callbackPrefix = 'reqwest_' + (+new Date())
+    , lastValue // data stored by the most recent JSONP callback
+    , xmlHttpRequest = 'XMLHttpRequest'
+    , xDomainRequest = 'XDomainRequest'
+    , noop = function () {}
+
+    , isArray = typeof Array.isArray == 'function'
+        ? Array.isArray
+        : function (a) {
+            return a instanceof Array
+          }
+
+    , defaultHeaders = {
+          'contentType': 'application/x-www-form-urlencoded'
+        , 'requestedWith': xmlHttpRequest
+        , 'accept': {
+              '*':  'text/javascript, text/html, application/xml, text/xml, */*'
+            , 'xml':  'application/xml, text/xml'
+            , 'html': 'text/html'
+            , 'text': 'text/plain'
+            , 'json': 'application/json, text/javascript'
+            , 'js':   'application/javascript, text/javascript'
+          }
+      }
+
+    , xhr = function(o) {
+        // is it x-domain
+        if (o['crossOrigin'] === true) {
+          var xhr = context[xmlHttpRequest] ? new XMLHttpRequest() : null
+          if (xhr && 'withCredentials' in xhr) {
+            return xhr
+          } else if (context[xDomainRequest]) {
+            return new XDomainRequest()
+          } else {
+            throw new Error('Browser does not support cross-origin requests')
+          }
+        } else if (context[xmlHttpRequest]) {
+          return new XMLHttpRequest()
+        } else if (XHR2) {
+          return new XHR2()
+        } else {
+          return new ActiveXObject('Microsoft.XMLHTTP')
+        }
+      }
+    , globalSetupOptions = {
+        dataFilter: function (data) {
+          return data
+        }
+      }
+
+  function succeed(r) {
+    var protocol = protocolRe.exec(r.url)
+    protocol = (protocol && protocol[1]) || context.location.protocol
+    return httpsRe.test(protocol) ? twoHundo.test(r.request.status) : !!r.request.response
+  }
+
+  function handleReadyState(r, success, error) {
+    return function () {
+      // use _aborted to mitigate against IE err c00c023f
+      // (can't read props on aborted request objects)
+      if (r._aborted) return error(r.request)
+      if (r._timedOut) return error(r.request, 'Request is aborted: timeout')
+      if (r.request && r.request[readyState] == 4) {
+        r.request.onreadystatechange = noop
+        if (succeed(r)) success(r.request)
+        else
+          error(r.request)
+      }
+    }
+  }
+
+  function setHeaders(http, o) {
+    var headers = o['headers'] || {}
+      , h
+
+    headers['Accept'] = headers['Accept']
+      || defaultHeaders['accept'][o['type']]
+      || defaultHeaders['accept']['*']
+
+    var isAFormData = typeof FormData !== 'undefined' && (o['data'] instanceof FormData);
+    // breaks cross-origin requests with legacy browsers
+    if (!o['crossOrigin'] && !headers[requestedWith]) headers[requestedWith] = defaultHeaders['requestedWith']
+    if (!headers[contentType] && !isAFormData) headers[contentType] = o['contentType'] || defaultHeaders['contentType']
+    for (h in headers)
+      headers.hasOwnProperty(h) && 'setRequestHeader' in http && http.setRequestHeader(h, headers[h])
+  }
+
+  function setCredentials(http, o) {
+    if (typeof o['withCredentials'] !== 'undefined' && typeof http.withCredentials !== 'undefined') {
+      http.withCredentials = !!o['withCredentials']
+    }
+  }
+
+  function generalCallback(data) {
+    lastValue = data
+  }
+
+  function urlappend (url, s) {
+    return url + (/\?/.test(url) ? '&' : '?') + s
+  }
+
+  function handleJsonp(o, fn, err, url) {
+    var reqId = uniqid++
+      , cbkey = o['jsonpCallback'] || 'callback' // the 'callback' key
+      , cbval = o['jsonpCallbackName'] || reqwest.getcallbackPrefix(reqId)
+      , cbreg = new RegExp('((^|\\?|&)' + cbkey + ')=([^&]+)')
+      , match = url.match(cbreg)
+      , script = doc.createElement('script')
+      , loaded = 0
+      , isIE10 = navigator.userAgent.indexOf('MSIE 10.0') !== -1
+
+    if (match) {
+      if (match[3] === '?') {
+        url = url.replace(cbreg, '$1=' + cbval) // wildcard callback func name
+      } else {
+        cbval = match[3] // provided callback func name
+      }
+    } else {
+      url = urlappend(url, cbkey + '=' + cbval) // no callback details, add 'em
+    }
+
+    context[cbval] = generalCallback
+
+    script.type = 'text/javascript'
+    script.src = url
+    script.async = true
+    if (typeof script.onreadystatechange !== 'undefined' && !isIE10) {
+      // need this for IE due to out-of-order onreadystatechange(), binding script
+      // execution to an event listener gives us control over when the script
+      // is executed. See http://jaubourg.net/2010/07/loading-script-as-onclick-handler-of.html
+      script.htmlFor = script.id = '_reqwest_' + reqId
+    }
+
+    script.onload = script.onreadystatechange = function () {
+      if ((script[readyState] && script[readyState] !== 'complete' && script[readyState] !== 'loaded') || loaded) {
+        return false
+      }
+      script.onload = script.onreadystatechange = null
+      script.onclick && script.onclick()
+      // Call the user callback with the last value stored and clean up values and scripts.
+      fn(lastValue)
+      lastValue = undefined
+      head.removeChild(script)
+      loaded = 1
+    }
+
+    // Add the script to the DOM head
+    head.appendChild(script)
+
+    // Enable JSONP timeout
+    return {
+      abort: function () {
+        script.onload = script.onreadystatechange = null
+        err({}, 'Request is aborted: timeout', {})
+        lastValue = undefined
+        head.removeChild(script)
+        loaded = 1
+      }
+    }
+  }
+
+  function getRequest(fn, err) {
+    var o = this.o
+      , method = (o['method'] || 'GET').toUpperCase()
+      , url = typeof o === 'string' ? o : o['url']
+      // convert non-string objects to query-string form unless o['processData'] is false
+      , data = (o['processData'] !== false && o['data'] && typeof o['data'] !== 'string')
+        ? reqwest.toQueryString(o['data'])
+        : (o['data'] || null)
+      , http
+      , sendWait = false
+
+    // if we're working on a GET request and we have data then we should append
+    // query string to end of URL and not post data
+    if ((o['type'] == 'jsonp' || method == 'GET') && data) {
+      url = urlappend(url, data)
+      data = null
+    }
+
+    if (o['type'] == 'jsonp') return handleJsonp(o, fn, err, url)
+
+    // get the xhr from the factory if passed
+    // if the factory returns null, fall-back to ours
+    http = (o.xhr && o.xhr(o)) || xhr(o)
+
+    http.open(method, url, o['async'] === false ? false : true)
+    setHeaders(http, o)
+    setCredentials(http, o)
+    if (context[xDomainRequest] && http instanceof context[xDomainRequest]) {
+        http.onload = fn
+        http.onerror = err
+        // NOTE: see
+        // http://social.msdn.microsoft.com/Forums/en-US/iewebdevelopment/thread/30ef3add-767c-4436-b8a9-f1ca19b4812e
+        http.onprogress = function() {}
+        sendWait = true
+    } else {
+      http.onreadystatechange = handleReadyState(this, fn, err)
+    }
+    o['before'] && o['before'](http)
+    if (sendWait) {
+      setTimeout(function () {
+        http.send(data)
+      }, 200)
+    } else {
+      http.send(data)
+    }
+    return http
+  }
+
+  function Reqwest(o, fn) {
+    this.o = o
+    this.fn = fn
+
+    init.apply(this, arguments)
+  }
+
+  function setType(header) {
+    // json, javascript, text/plain, text/html, xml
+    if (header === null) return undefined; //In case of no content-type.
+    if (header.match('json')) return 'json'
+    if (header.match('javascript')) return 'js'
+    if (header.match('text')) return 'html'
+    if (header.match('xml')) return 'xml'
+  }
+
+  function init(o, fn) {
+
+    this.url = typeof o == 'string' ? o : o['url']
+    this.timeout = null
+
+    // whether request has been fulfilled for purpose
+    // of tracking the Promises
+    this._fulfilled = false
+    // success handlers
+    this._successHandler = function(){}
+    this._fulfillmentHandlers = []
+    // error handlers
+    this._errorHandlers = []
+    // complete (both success and fail) handlers
+    this._completeHandlers = []
+    this._erred = false
+    this._responseArgs = {}
+
+    var self = this
+
+    fn = fn || function () {}
+
+    if (o['timeout']) {
+      this.timeout = setTimeout(function () {
+        timedOut()
+      }, o['timeout'])
+    }
+
+    if (o['success']) {
+      this._successHandler = function () {
+        o['success'].apply(o, arguments)
+      }
+    }
+
+    if (o['error']) {
+      this._errorHandlers.push(function () {
+        o['error'].apply(o, arguments)
+      })
+    }
+
+    if (o['complete']) {
+      this._completeHandlers.push(function () {
+        o['complete'].apply(o, arguments)
+      })
+    }
+
+    function complete (resp) {
+      o['timeout'] && clearTimeout(self.timeout)
+      self.timeout = null
+      while (self._completeHandlers.length > 0) {
+        self._completeHandlers.shift()(resp)
+      }
+    }
+
+    function success (resp) {
+      var type = o['type'] || resp && setType(resp.getResponseHeader('Content-Type')) // resp can be undefined in IE
+      resp = (type !== 'jsonp') ? self.request : resp
+      // use global data filter on response text
+      var filteredResponse = globalSetupOptions.dataFilter(resp.responseText, type)
+        , r = filteredResponse
+      try {
+        resp.responseText = r
+      } catch (e) {
+        // can't assign this in IE<=8, just ignore
+      }
+      if (r) {
+        switch (type) {
+        case 'json':
+          try {
+            resp = context.JSON ? context.JSON.parse(r) : eval('(' + r + ')')
+          } catch (err) {
+            return error(resp, 'Could not parse JSON in response', err)
+          }
+          break
+        case 'js':
+          resp = eval(r)
+          break
+        case 'html':
+          resp = r
+          break
+        case 'xml':
+          resp = resp.responseXML
+              && resp.responseXML.parseError // IE trololo
+              && resp.responseXML.parseError.errorCode
+              && resp.responseXML.parseError.reason
+            ? null
+            : resp.responseXML
+          break
+        }
+      }
+
+      self._responseArgs.resp = resp
+      self._fulfilled = true
+      fn(resp)
+      self._successHandler(resp)
+      while (self._fulfillmentHandlers.length > 0) {
+        resp = self._fulfillmentHandlers.shift()(resp)
+      }
+
+      complete(resp)
+    }
+
+    function timedOut() {
+      self._timedOut = true
+      self.request.abort()
+    }
+
+    function error(resp, msg, t) {
+      resp = self.request
+      self._responseArgs.resp = resp
+      self._responseArgs.msg = msg
+      self._responseArgs.t = t
+      self._erred = true
+      while (self._errorHandlers.length > 0) {
+        self._errorHandlers.shift()(resp, msg, t)
+      }
+      complete(resp)
+    }
+
+    this.request = getRequest.call(this, success, error)
+  }
+
+  Reqwest.prototype = {
+    abort: function () {
+      this._aborted = true
+      this.request.abort()
+    }
+
+  , retry: function () {
+      init.call(this, this.o, this.fn)
+    }
+
+    /**
+     * Small deviation from the Promises A CommonJs specification
+     * http://wiki.commonjs.org/wiki/Promises/A
+     */
+
+    /**
+     * `then` will execute upon successful requests
+     */
+  , then: function (success, fail) {
+      success = success || function () {}
+      fail = fail || function () {}
+      if (this._fulfilled) {
+        this._responseArgs.resp = success(this._responseArgs.resp)
+      } else if (this._erred) {
+        fail(this._responseArgs.resp, this._responseArgs.msg, this._responseArgs.t)
+      } else {
+        this._fulfillmentHandlers.push(success)
+        this._errorHandlers.push(fail)
+      }
+      return this
+    }
+
+    /**
+     * `always` will execute whether the request succeeds or fails
+     */
+  , always: function (fn) {
+      if (this._fulfilled || this._erred) {
+        fn(this._responseArgs.resp)
+      } else {
+        this._completeHandlers.push(fn)
+      }
+      return this
+    }
+
+    /**
+     * `fail` will execute when the request fails
+     */
+  , fail: function (fn) {
+      if (this._erred) {
+        fn(this._responseArgs.resp, this._responseArgs.msg, this._responseArgs.t)
+      } else {
+        this._errorHandlers.push(fn)
+      }
+      return this
+    }
+  , 'catch': function (fn) {
+      return this.fail(fn)
+    }
+  }
+
+  function reqwest(o, fn) {
+    return new Reqwest(o, fn)
+  }
+
+  // normalize newline variants according to spec -> CRLF
+  function normalize(s) {
+    return s ? s.replace(/\r?\n/g, '\r\n') : ''
+  }
+
+  function serial(el, cb) {
+    var n = el.name
+      , t = el.tagName.toLowerCase()
+      , optCb = function (o) {
+          // IE gives value="" even where there is no value attribute
+          // 'specified' ref: http://www.w3.org/TR/DOM-Level-3-Core/core.html#ID-862529273
+          if (o && !o['disabled'])
+            cb(n, normalize(o['attributes']['value'] && o['attributes']['value']['specified'] ? o['value'] : o['text']))
+        }
+      , ch, ra, val, i
+
+    // don't serialize elements that are disabled or without a name
+    if (el.disabled || !n) return
+
+    switch (t) {
+    case 'input':
+      if (!/reset|button|image|file/i.test(el.type)) {
+        ch = /checkbox/i.test(el.type)
+        ra = /radio/i.test(el.type)
+        val = el.value
+        // WebKit gives us "" instead of "on" if a checkbox has no value, so correct it here
+        ;(!(ch || ra) || el.checked) && cb(n, normalize(ch && val === '' ? 'on' : val))
+      }
+      break
+    case 'textarea':
+      cb(n, normalize(el.value))
+      break
+    case 'select':
+      if (el.type.toLowerCase() === 'select-one') {
+        optCb(el.selectedIndex >= 0 ? el.options[el.selectedIndex] : null)
+      } else {
+        for (i = 0; el.length && i < el.length; i++) {
+          el.options[i].selected && optCb(el.options[i])
+        }
+      }
+      break
+    }
+  }
+
+  // collect up all form elements found from the passed argument elements all
+  // the way down to child elements; pass a '<form>' or form fields.
+  // called with 'this'=callback to use for serial() on each element
+  function eachFormElement() {
+    var cb = this
+      , e, i
+      , serializeSubtags = function (e, tags) {
+          var i, j, fa
+          for (i = 0; i < tags.length; i++) {
+            fa = e[byTag](tags[i])
+            for (j = 0; j < fa.length; j++) serial(fa[j], cb)
+          }
+        }
+
+    for (i = 0; i < arguments.length; i++) {
+      e = arguments[i]
+      if (/input|select|textarea/i.test(e.tagName)) serial(e, cb)
+      serializeSubtags(e, [ 'input', 'select', 'textarea' ])
+    }
+  }
+
+  // standard query string style serialization
+  function serializeQueryString() {
+    return reqwest.toQueryString(reqwest.serializeArray.apply(null, arguments))
+  }
+
+  // { 'name': 'value', ... } style serialization
+  function serializeHash() {
+    var hash = {}
+    eachFormElement.apply(function (name, value) {
+      if (name in hash) {
+        hash[name] && !isArray(hash[name]) && (hash[name] = [hash[name]])
+        hash[name].push(value)
+      } else hash[name] = value
+    }, arguments)
+    return hash
+  }
+
+  // [ { name: 'name', value: 'value' }, ... ] style serialization
+  reqwest.serializeArray = function () {
+    var arr = []
+    eachFormElement.apply(function (name, value) {
+      arr.push({name: name, value: value})
+    }, arguments)
+    return arr
+  }
+
+  reqwest.serialize = function () {
+    if (arguments.length === 0) return ''
+    var opt, fn
+      , args = Array.prototype.slice.call(arguments, 0)
+
+    opt = args.pop()
+    opt && opt.nodeType && args.push(opt) && (opt = null)
+    opt && (opt = opt.type)
+
+    if (opt == 'map') fn = serializeHash
+    else if (opt == 'array') fn = reqwest.serializeArray
+    else fn = serializeQueryString
+
+    return fn.apply(null, args)
+  }
+
+  reqwest.toQueryString = function (o, trad) {
+    var prefix, i
+      , traditional = trad || false
+      , s = []
+      , enc = encodeURIComponent
+      , add = function (key, value) {
+          // If value is a function, invoke it and return its value
+          value = ('function' === typeof value) ? value() : (value == null ? '' : value)
+          s[s.length] = enc(key) + '=' + enc(value)
+        }
+    // If an array was passed in, assume that it is an array of form elements.
+    if (isArray(o)) {
+      for (i = 0; o && i < o.length; i++) add(o[i]['name'], o[i]['value'])
+    } else {
+      // If traditional, encode the "old" way (the way 1.3.2 or older
+      // did it), otherwise encode params recursively.
+      for (prefix in o) {
+        if (o.hasOwnProperty(prefix)) buildParams(prefix, o[prefix], traditional, add)
+      }
+    }
+
+    // spaces should be + according to spec
+    return s.join('&').replace(/%20/g, '+')
+  }
+
+  function buildParams(prefix, obj, traditional, add) {
+    var name, i, v
+      , rbracket = /\[\]$/
+
+    if (isArray(obj)) {
+      // Serialize array item.
+      for (i = 0; obj && i < obj.length; i++) {
+        v = obj[i]
+        if (traditional || rbracket.test(prefix)) {
+          // Treat each array item as a scalar.
+          add(prefix, v)
+        } else {
+          buildParams(prefix + '[' + (typeof v === 'object' ? i : '') + ']', v, traditional, add)
+        }
+      }
+    } else if (obj && obj.toString() === '[object Object]') {
+      // Serialize object item.
+      for (name in obj) {
+        buildParams(prefix + '[' + name + ']', obj[name], traditional, add)
+      }
+
+    } else {
+      // Serialize scalar item.
+      add(prefix, obj)
+    }
+  }
+
+  reqwest.getcallbackPrefix = function () {
+    return callbackPrefix
+  }
+
+  // jQuery and Zepto compatibility, differences can be remapped here so you can call
+  // .ajax.compat(options, callback)
+  reqwest.compat = function (o, fn) {
+    if (o) {
+      o['type'] && (o['method'] = o['type']) && delete o['type']
+      o['dataType'] && (o['type'] = o['dataType'])
+      o['jsonpCallback'] && (o['jsonpCallbackName'] = o['jsonpCallback']) && delete o['jsonpCallback']
+      o['jsonp'] && (o['jsonpCallback'] = o['jsonp'])
+    }
+    return new Reqwest(o, fn)
+  }
+
+  reqwest.ajaxSetup = function (options) {
+    options = options || {}
+    for (var k in options) {
+      globalSetupOptions[k] = options[k]
+    }
+  }
+
+  return reqwest
+});
+
+},{"xhr2":18}],20:[function(require,module,exports){
 var VNode = require('./vnode');
 var is = require('./is');
 
@@ -592,7 +1264,7 @@ module.exports = function h(sel, b, c) {
   return VNode(sel, data, children, text, undefined);
 };
 
-},{"./is":20,"./vnode":27}],19:[function(require,module,exports){
+},{"./is":22,"./vnode":29}],21:[function(require,module,exports){
 function createElement(tagName){
   return document.createElement(tagName);
 }
@@ -648,13 +1320,13 @@ module.exports = {
   setTextContent: setTextContent
 };
 
-},{}],20:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 module.exports = {
   array: Array.isArray,
   primitive: function(s) { return typeof s === 'string' || typeof s === 'number'; },
 };
 
-},{}],21:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 var booleanAttrs = ["allowfullscreen", "async", "autofocus", "autoplay", "checked", "compact", "controls", "declare", 
                 "default", "defaultchecked", "defaultmuted", "defaultselected", "defer", "disabled", "draggable", 
                 "enabled", "formnovalidate", "hidden", "indeterminate", "inert", "ismap", "itemscope", "loop", "multiple", 
@@ -695,7 +1367,7 @@ function updateAttrs(oldVnode, vnode) {
 
 module.exports = {create: updateAttrs, update: updateAttrs};
 
-},{}],22:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 function updateClass(oldVnode, vnode) {
   var cur, name, elm = vnode.elm,
       oldClass = oldVnode.data.class || {},
@@ -715,7 +1387,7 @@ function updateClass(oldVnode, vnode) {
 
 module.exports = {create: updateClass, update: updateClass};
 
-},{}],23:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 var is = require('../is');
 
 function arrInvoker(arr) {
@@ -758,7 +1430,7 @@ function updateEventListeners(oldVnode, vnode) {
 
 module.exports = {create: updateEventListeners, update: updateEventListeners};
 
-},{"../is":20}],24:[function(require,module,exports){
+},{"../is":22}],26:[function(require,module,exports){
 function updateProps(oldVnode, vnode) {
   var key, cur, old, elm = vnode.elm,
       oldProps = oldVnode.data.props || {}, props = vnode.data.props || {};
@@ -778,7 +1450,7 @@ function updateProps(oldVnode, vnode) {
 
 module.exports = {create: updateProps, update: updateProps};
 
-},{}],25:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 var raf = (typeof window !== 'undefined' && window.requestAnimationFrame) || setTimeout;
 var nextFrame = function(fn) { raf(function() { raf(fn); }); };
 
@@ -844,7 +1516,7 @@ function applyRemoveStyle(vnode, rm) {
 
 module.exports = {create: updateStyle, update: updateStyle, destroy: applyDestroyStyle, remove: applyRemoveStyle};
 
-},{}],26:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 // jshint newcap: false
 /* global require, module, document, Node */
 'use strict';
@@ -1113,7 +1785,7 @@ function init(modules, api) {
 
 module.exports = {init: init};
 
-},{"./htmldomapi.js":19,"./is":20,"./vnode":27}],27:[function(require,module,exports){
+},{"./htmldomapi.js":21,"./is":22,"./vnode":29}],29:[function(require,module,exports){
 module.exports = function(sel, data, children, text, elm) {
   var key = data === undefined ? undefined : data.key;
   return {sel: sel, data: data, children: children,

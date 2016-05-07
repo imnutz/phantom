@@ -5,6 +5,8 @@ var menu = require("./menu");
 var main = require("./main");
 var footer = require("./footer");
 
+var reqwest = require("reqwest");
+
 var dataset = {
     header: null,
     menu: null,
@@ -13,6 +15,10 @@ var dataset = {
 };
 
 var noop = function() {};
+
+var fetchTiles = function fetchTiles() {
+    return reqwest("http://localhost:3000/tiles");
+};
 
 var model = {
     render: noop,
@@ -31,7 +37,19 @@ var model = {
     },
 
     present: function modelPresent(data) {
-        this.render(dataset);
+        data = data || {};
+
+        if(data.fetchTiles) {
+            fetchTiles().then(function(response) {
+
+                dataset.main = main.present({
+                    tiles: response
+                });
+
+                this.render(dataset);
+
+            }.bind(this));
+        }
     }
 };
 

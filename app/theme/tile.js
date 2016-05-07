@@ -4,7 +4,7 @@ var h = require("snabbdom/h");
 
 module.exports = {
     tileItem: function tileItem(tile) {
-        return h("article", {props:{class:tile.cssClass}}, [
+        return h("article", {attrs:{class:tile.cssClass}}, [
             h("span.image", [
                 h("img", {props:{src:tile.imageUrl, alt:""}})
             ]),

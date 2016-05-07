@@ -7,6 +7,10 @@ var action = {
 
     wire: function wire(present) {
         this.present = present;
+    },
+
+    loadTiles: function loadTiles() {
+        this.present({ fetchTiles: true });
     }
 };
 
